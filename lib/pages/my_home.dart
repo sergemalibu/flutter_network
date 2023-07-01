@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_network/models/user.dart';
-import 'package:flutter_network/services/user_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_network/pages/bloc/offices_bloc.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -9,42 +9,36 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-Future<OfficesList>? officessList;
-
 class _MyHomePageState extends State<MyHomePage> {
   @override
-  void initState() {
-    officessList = OfficesRepository.getOfficesList();
-    setState(() {});
-    super.initState();
-  }
-
-  @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('JSON Serialization')),
-      body: FutureBuilder<OfficesList>(
-        future: officessList,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
+      appBar: AppBar(),
+      body: BlocBuilder<OfficesBloc, OfficesState>(
+        builder: (context, state) {
+          if (state is LoadingState) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is LoadedState) {
             return ListView.builder(
-                itemCount: snapshot.data!.offices!.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    child: ListTile(
-                      title: Text('${snapshot.data?.offices?[index].name}'),
-                      subtitle:
-                          Text('${snapshot.data?.offices?[index].address}'),
-                      leading: Image.network(
-                          '${snapshot.data?.offices?[index].image}'),
-                      isThreeLine: true,
-                    ),
-                  );
-                });
-          } else if (snapshot.hasError) {
-            return const Text('Error');
+              itemCount: state.officesList.offices?.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  child: ListTile(
+                    title: Text('${state.officesList.offices?[index].name}'),
+                    subtitle:
+                        Text('${state.officesList.offices?[index].address}'),
+                    leading: Image.network(
+                        '${state.officesList.offices?[index].image}'),
+                  ),
+                );
+              },
+            );
+          }
+          if (state is FailureState) {
+            return Center(
+              child: Text(state.exception.toString()),
+            );
           }
           return const Center(child: CircularProgressIndicator());
         },
